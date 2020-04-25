@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "/home/rjn/Arduino/libraries/ArduinoJson/src",
+                "/home/rjn/Arduino/libraries/OneWire",
+                "/home/rjn/Arduino/libraries/NTPClient",
+                "/home/rjn/Arduino/libraries/MQTT/src",
+                "/home/rjn/Arduino/libraries/DallasTemperature",
+                "/home/rjn/.arduino15/packages/esp8266/tools/**",
+                "/home/rjn/.arduino15/packages/esp8266/hardware/esp8266/2.6.3/**"
+            ],
+            "forcedInclude": [],
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/clang-6.0",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
