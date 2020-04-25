@@ -18,13 +18,13 @@
 #define DEVICENAME "CIRC"
 #define MQTTHOST "192.168.0.134"
 
-#define HIGH_POINT 90
-#define LOW_POINT 75
+#define HIGH_POINT 125
+#define LOW_POINT 110
 
-// 1 minutes
-#define MIN_RUN_TIME 6000
+// 10 minutes
+#define MIN_RUN_TIME 600000
 // temp check interval
-#define PERIOD 10000
+#define PERIOD 100000
 
 #define DEBUG
 
