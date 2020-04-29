@@ -4,7 +4,6 @@
   Author:	nusbaum
 */
 
-
 #include <Arduino.h>
 
 #include <ESP8266WiFi.h>
@@ -66,7 +65,7 @@ void publishStatus(const char *statusstr)
   int n = serializeJson(doc, buffer);
   DEBUG_PRINTF("[MQTT] PUBLISHing to %s\n", statusTopic.c_str());
   client.publish(statusTopic.c_str(), buffer, n);
-  DEBUG_PRINTF("Published %s\n", statusstr);
+  DEBUG_PRINTLN("Published.");
 }
 
 
@@ -124,13 +123,13 @@ class TempSensor {
 
 
 class SensorBus {
-  public:
     int pin;
     OneWire *wire;
     DallasTemperature *bus;
     int numsensors;
     TempSensor *sensors;
 
+  public:
     SensorBus() {
       pin = 0;
       wire = nullptr;
@@ -151,22 +150,26 @@ class SensorBus {
       sensors[i_sensoridx].initialize(i_devname, i_daddress);
     }
 
+    const TempSensor *getsensor(const int i_sensoridx) {
+      return &sensors[i_sensoridx];
+    }
+
     void begin() {
       bus->begin();
       for (int y = 0; y < numsensors; ++y)
       {
         #ifdef DEBUG
         Serial.print("Device Address: ");
-        printAddress(sensors[y].devaddr);
+        printAddress(sensors[y].device_address());
         Serial.println();
         #endif
 
         // set the resolution to 9 bit (Each Dallas/Maxim device is capable of several different resolutions)
-        bus->setResolution(sensors[y].devaddr, 9);
+        bus->setResolution(sensors[y].device_address(), 9);
 
         #ifdef DEBUG
         Serial.print("Device Resolution: ");
-        Serial.print(bus->getResolution(sensors[y].devaddr), DEC);
+        Serial.print(bus->getResolution(sensors[y].device_address()), DEC);
         Serial.println();
         #endif
       }
@@ -179,19 +182,19 @@ class SensorBus {
     void processTemps(unsigned long etime) {
       for (int y = 0; y < numsensors; ++y)
       {
-        float tempC = bus->getTempC(sensors[y].devaddr);
+        float tempC = bus->getTempC(sensors[y].device_address());
         float tempF = bus->toFahrenheit(tempC);
         sensors[y].temp = tempF;
       #ifdef DEBUG
-        printTemperature(sensors[y].devaddr, tempC, tempF); // Use a simple function to print out the data
+        printTemperature(sensors[y].device_address(), tempC, tempF); // Use a simple function to print out the data
       #endif
 
         StaticJsonDocument<128> doc;
-        doc["sensor"] = sensors[y].devname;
+        doc["sensor"] = sensors[y].device_name();
         doc["timestamp"] = etime;
         doc["value"] = tempF;
         // Generate the minified JSON and put it in buffer.
-        String topic = tempTopic + sensors[y].devname;
+        String topic = tempTopic + sensors[y].device_name();
         char buffer[128];
         int n = serializeJson(doc, buffer);
         DEBUG_PRINTF("[MQTT] PUBLISHing to %s\n", topic.c_str());
@@ -204,9 +207,10 @@ class SensorBus {
       delete bus;
       delete wire;
     }
+
 };
 
-// temperature sensor bus
+
 int numbusses = 0;
 SensorBus *bus = nullptr;
 
@@ -284,8 +288,7 @@ void connect() {
   DEBUG_PRINTLN(WiFi.macAddress());
 
   DEBUG_PRINT("\nconnecting to MQTT...");
-  while (!client.connect(mqtt_client_id.c_str())) 
-  {
+  while (!client.connect(mqtt_client_id.c_str())) {
     DEBUG_PRINT(".");
     delay(500);
   }
@@ -296,55 +299,20 @@ void connect() {
 }
 
 
-// pump control pin
-int pinState = LOW;             // ledState used to set the LED
-int pin = 12;
-
-
-int period = PERIOD;
-unsigned long previousMillis = 0;
-unsigned long pump_start = 0;
-bool pump_state = false;
-
-
-void turn_off_pump()
-{
-  pump_state = false;
-  DEBUG_PRINTLN("Pump off");
-  // set the relay with the pinState of the variable:
-  digitalWrite(pin, LOW);
-  delay(10);
-}
-
-
-void turn_on_pump()
-{
-  pump_state = true;
-  DEBUG_PRINTLN("Pump on");
-  // set the relay with the pinState of the variable:
-  digitalWrite(pin, HIGH);
-  delay(10);
-}
-
-
-void setup() 
-{
+void setup() {
+#ifdef DEBUG
   Serial.begin(115200);
 
   Serial.println();
   Serial.println();
   Serial.println();
 
-  for (uint8_t t = 4; t > 0; t--) 
-  {
+  for (uint8_t t = 4; t > 0; t--) {
     Serial.printf("[SETUP] WAIT %d...\n", t);
     Serial.flush();
     delay(1000);
   }
-
-  // set the digital pin as output:
-  pinMode(pin, OUTPUT);
-  turn_off_pump();
+#endif
 
   WiFi.mode(WIFI_STA);
   WiFi.begin("nusbaum-24g", "we live in Park City now");
@@ -361,6 +329,11 @@ void setup()
   req_configure();
 }
 
+
+int period = 100000;
+unsigned long previousMillis = 0;
+unsigned long pump_start = 0;
+bool pump_state = false;
 
 void loop() 
 {
@@ -396,24 +369,23 @@ void loop()
       if (pump_state)
       {
         //   has it been on for more than 10 minutes?
-        if ((currentMillis - pump_start) > MIN_RUN_TIME)
+        if ((currentMillis - pump_start) > 600000)
         {
           // is return temp > high point?
-          if (wheat_ret_temp > HIGH_POINT)
+          if (wheat_ret_temp > 125)
           {
             // turn off pump, set pump status
-            turn_off_pump();
+            pump_state = false;
           }
         }
       }
       else
       {
         // is return temp < low point?
-        if (wheat_ret_temp < LOW_POINT)
+        if (wheat_ret_temp < 110)
         {
-          // turn pump on,
-          turn_on_pump();
-          // record time
+          // turn pump on, record time, set pump status
+          pump_state = true;
           pump_start = currentMillis;
         }
       }
