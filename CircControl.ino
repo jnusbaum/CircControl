@@ -21,6 +21,9 @@
 #define HIGH_POINT 125
 #define LOW_POINT 110
 
+#define IGNORE_LOW 65
+#define IGNORE_HIGH 145
+
 // 10 minutes
 #define MIN_RUN_TIME 600000
 // temp check interval
@@ -210,7 +213,8 @@ int numbusses = 0;
 SensorBus *bus = nullptr;
 
 
-void configReceived(String &topic, String &payload) {
+void configReceived(String &topic, String &payload) 
+{
   DEBUG_PRINTLN("incoming config: " + topic + " - " + payload);
   publishStatus("CONFIG RECEIVED");
   DynamicJsonDocument doc(4096);
@@ -295,6 +299,8 @@ void connect() {
 }
 
 
+// main loop globals
+
 // pump control pin
 int pinState = LOW;             // ledState used to set the LED
 int pin = 12;
@@ -304,6 +310,7 @@ int period = PERIOD;
 unsigned long previousMillis = 0;
 unsigned long pump_start = 0;
 bool pump_state = false;
+bool doublecheck = false;
 
 
 void turn_off_pump()
@@ -391,29 +398,42 @@ void loop()
       // we know we only have one bus and one sensor
       float wheat_ret_temp = bus->sensors[0].temp;
       // wheat_ret_temp contains hot water return temp
-      // if pump on
-      if (pump_state)
+      // if temp out of range
+      if (wheat_ret_temp > IGNORE_LOW && wheat_ret_temp < IGNORE_HIGH)
       {
-        //   has it been on for more than 10 minutes?
-        if ((currentMillis - pump_start) > MIN_RUN_TIME)
+        // if pump on
+        if (pump_state)
         {
-          // is return temp > high point?
-          if (wheat_ret_temp > HIGH_POINT)
+          //   has it been on for more than 10 minutes?
+          if ((currentMillis - pump_start) > MIN_RUN_TIME)
           {
-            // turn off pump, set pump status
-            turn_off_pump();
+            // is return temp > high point?
+            if (wheat_ret_temp > HIGH_POINT)
+            {
+              // turn off pump, set pump status
+              turn_off_pump();
+            }
           }
         }
-      }
-      else
-      {
-        // is return temp < low point?
-        if (wheat_ret_temp < LOW_POINT)
+        else
         {
-          // turn pump on,
-          turn_on_pump();
-          // record time
-          pump_start = currentMillis;
+          // is return temp < low point?
+          if (wheat_ret_temp < LOW_POINT)
+          {
+            if (doublecheck)
+            {
+              // turn pump on,
+              turn_on_pump();
+              // record time
+              pump_start = currentMillis;
+              doublecheck = false;
+            }
+            else
+            {
+              doublecheck = true;
+            }
+            
+          }
         }
       }
 
