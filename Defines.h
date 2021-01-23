@@ -4,6 +4,12 @@
 #define DEVICENAME "CIRC";
 #define MQTTHOST "192.168.0.134"
 
+// 10 minutes                                                                   
+#define MIN_RUN_TIME 600000
+// temp check interval                                                          
+#define PERIOD 100000
+
+
 #define DEBUG
 
 #ifdef DEBUG

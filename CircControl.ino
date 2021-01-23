@@ -122,6 +122,11 @@ void setup() {
   }
 #endif
 
+  // set the digital pin as output:                                             
+  pinMode(pin, OUTPUT);
+  turn_off_pump();
+
+
   WiFi.mode(WIFI_STA);
   WiFi.begin("nusbaum-24g", "we live in Park City now");
   client.begin(MQTTHOST, net);
@@ -138,8 +143,34 @@ void setup() {
 }
 
 
-int period = 10000;
+// pump control pin                                                             
+int pinState = LOW;             // ledState used to set the LED                 
+int pin = 12;
+
+int period = PERIOD;
 unsigned long previousMillis = 0;
+unsigned long pump_start = 0;
+bool pump_state = false;
+
+
+void turn_off_pump()
+{
+  pump_state = false;
+  DEBUG_PRINTLN("Pump off");
+  // set the relay with the pinState of the variable:                           
+  digitalWrite(pin, LOW);
+  delay(10);
+}
+
+
+void turn_on_pump()
+{
+  pump_state = true;
+  DEBUG_PRINTLN("Pump on");
+  // set the relay with the pinState of the variable:                           
+  digitalWrite(pin, HIGH);
+  delay(10);
+}
 
 void loop() 
 {
@@ -161,6 +192,53 @@ void loop()
     previousMillis = currentMillis;
 
     if (configured) {
+           unsigned long etime = timeClient.getEpochTime();
+      bus->requestTemps();
+      DEBUG_PRINTF("time = %u\n", etime);
+      delay(500);
+      bus->processTemps(etime);
+
+      // we know we only have one bus and one sensor                            
+      float wheat_ret_temp = bus->sensors[0].temp;
+      // wheat_ret_temp contains hot water return temp                          
+      // if pump on                                                             
+      if (pump_state)
+      {
+        //   has it been on for more than 10 minutes?                           
+  if ((currentMillis - pump_start) > MIN_RUN_TIME)
+        {
+          // is return temp > high point?                                       
+          if (wheat_ret_temp > HIGH_POINT)
+          {
+            // turn off pump, set pump status                                   
+            turn_off_pump();
+          }
+        }
+      }
+      else
+      {
+        // is return temp < low point?                                          
+        if (wheat_ret_temp < LOW_POINT)
+        {
+          // turn pump on,                                                      
+          turn_on_pump();
+          // record time                                                        
+          pump_start = currentMillis;
+        }
+      }
+
+      if (pump_state)
+      {
+        publishStatus("PUMP-RUNNING");
+      }
+      else
+      {
+        publishStatus("PUMP-STOPPED");
+      }
+    }
+  }
+}
+
       unsigned long etime = timeClient.getEpochTime();
       for (int x = 0; x < numbusses; ++x)
       {
