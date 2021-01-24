@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "C:\\Users\\nusbaum\\Documents\\Projects\\libraries\\DallasTemperature",
+                "C:\\Users\\nusbaum\\Documents\\Projects\\libraries\\ArduinoJson\\src",
+                "C:\\Users\\nusbaum\\Documents\\Projects\\libraries\\OneWire",
+                "C:\\Users\\nusbaum\\Documents\\Projects\\libraries\\MQTT\\src",
+                "C:\\Users\\nusbaum\\Documents\\Projects\\libraries\\NTPClient",
+                "C:\\Users\\nusbaum\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\**",
+                "C:\\Users\\nusbaum\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.6.3\\**"
+            ],
+            "forcedInclude": [],
+            "intelliSenseMode": "msvc-x64"
+        }
+    ],
+    "version": 4
+}

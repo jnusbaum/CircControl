@@ -9,6 +9,8 @@
 // temp check interval                                                          
 #define PERIOD 100000
 
+#define HIGH_POINT 125
+#define LOW_POINT 110
 
 #define DEBUG
 
