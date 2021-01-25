@@ -5,9 +5,9 @@
 #define MQTTHOST "192.168.0.134"
 
 // 10 minutes                                                                   
-#define MIN_RUN_TIME 600000
+#define MIN_RUN_TIME 300000
 // temp check interval                                                          
-#define PERIOD 100000
+#define PERIOD 10000
 
 #define HIGH_POINT 125
 #define LOW_POINT 110
