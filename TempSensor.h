@@ -7,7 +7,6 @@
 
 
 
-
 class TempSensor {
     char devname[64];
     DeviceAddress devaddr;
@@ -104,13 +103,12 @@ class SensorBus {
     }
 
 
-    String deviceName(int y) {
+    const char *deviceName(int y) {
       return sensors[y].device_name();
     }
 
-    
 
-    void processTemps(unsigned long etime) {
+    void processTemps() {
       for (int y = 0; y < numsensors; ++y)
       {
         float tempC = getTempC(y);

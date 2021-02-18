@@ -3,6 +3,7 @@
 
 const String baseTopic = "sorrelhills/";
 const String tempTopic = baseTopic + "temperature/";
+const String relayTopic = baseTopic + "relay/";
 const String statusTopic = baseTopic + "device/status/" + DEVICENAME;
 const String configRequestTopic = baseTopic + "device/config-request/" + DEVICENAME;
 const String configReceiveTopic = baseTopic + "device/config/" + DEVICENAME;

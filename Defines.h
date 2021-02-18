@@ -12,6 +12,8 @@
 #define HIGH_POINT 125
 #define LOW_POINT 110
 
+#define RELAY HWPUMP
+
 #define DEBUG
 
 #ifdef DEBUG
