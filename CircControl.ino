@@ -33,7 +33,10 @@ SensorBus *bus = nullptr;
 int numrelays = 0;
 Relay *relay = nullptr;
 
-        
+// previous temp value used for cleaning
+float prevTempValue = 0;
+
+
 void configReceived(String &topic, String &payload) {
   DEBUG_PRINTLN("incoming config: " + topic + " - " + payload);
   publishStatus(client, timeClient, "CONFIG RECEIVED");
@@ -101,6 +104,16 @@ void configReceived(String &topic, String &payload) {
   configured = true;
   publishStatus(client, timeClient, "CONFIGURED");
   turn_off_pump();
+  
+  while (prevTempValue < MIN_WATER_TEMP || prevTempValue > MAX_WATER_TEMP) {
+    DEBUG_PRINTLN("Stabilizing temp sensor....");
+    bus->requestTemps();
+    delay(500);
+    bus->processTemps();
+    prevTempValue = bus->getTempF(0);
+    DEBUG_PRINTF("got %f\n", prevTempValue);
+  }
+  DEBUG_PRINTF("starting temp %f\n", prevTempValue);
 }
 
 
@@ -148,7 +161,6 @@ void turn_off_pump()
   DEBUG_PRINTLN("turning Pump off");
   relay->deEnergize();
   DEBUG_PRINTLN("Pump off");
-  publishState(client, timeClient, relay->devname, false);
 }
 
 
@@ -157,12 +169,12 @@ void turn_on_pump()
   DEBUG_PRINTLN(String("Turning pump on - pin number: ") + relay->pin);                     
   relay->energize();
   DEBUG_PRINTLN("Pump on");
-  publishState(client, timeClient, relay->devname, true);
 }
+
 
 void setup() {
 #ifdef DEBUG
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   Serial.println();
   Serial.println();
@@ -189,6 +201,8 @@ void setup() {
 
   req_configure();
 }
+
+
 
 
 void loop() 
@@ -220,6 +234,17 @@ void loop()
 
       // we know we only have one bus and one sensor
       float wheat_ret_temp = bus->getTempF(0);
+      DEBUG_PRINTF("sampled temp = %f\n", wheat_ret_temp);
+      // clean data
+      if (wheat_ret_temp < MIN_WATER_TEMP || wheat_ret_temp > MAX_WATER_TEMP || abs(wheat_ret_temp - prevTempValue) > MAX_TEMP_MOVE) {
+        DEBUG_PRINTF("got bad value %f\n", wheat_ret_temp);
+        wheat_ret_temp = prevTempValue;
+        DEBUG_PRINTF("using value %f\n", wheat_ret_temp);
+      }
+      else {
+        prevTempValue = wheat_ret_temp;
+      }
+      
       publishTemp(client, timeClient, bus->deviceName(0), wheat_ret_temp);
       DEBUG_PRINTF("temp = %f\n", wheat_ret_temp);
       // wheat_ret_temp contains hot water return temp
@@ -237,6 +262,7 @@ void loop()
             publishStatus(client, timeClient, "PUMP-STOPPED");
           }
         }
+        publishState(client, timeClient, relay->devname, true);
       }
       else
       {
@@ -249,6 +275,7 @@ void loop()
           pump_start = currentMillis;
           publishStatus(client, timeClient, "PUMP-RUNNING");
         }
+        publishState(client, timeClient, relay->devname, false);
       }
     }
   }

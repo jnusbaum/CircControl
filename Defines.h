@@ -14,6 +14,10 @@
 
 #define RELAY HWPUMP
 
+#define MIN_WATER_TEMP 35
+#define MAX_WATER_TEMP 150
+#define MAX_TEMP_MOVE 45
+
 #define DEBUG
 
 #ifdef DEBUG
